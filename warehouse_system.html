@@ -120,6 +120,12 @@
       <button class="lang-btn active" onclick="setLang('ar')">العربية</button>
       <button class="lang-btn" onclick="setLang('en')">English</button>
     </div>
+    <a href="https://docs.google.com/spreadsheets/d/1SWO_YC1YWIqKfx5HXVt6Sa_V_wOJiQ_yEHjewZ15Rs4/edit" target="_blank"
+      style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <img src="https://www.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png" style="width:16px;height:16px;">
+      Google Sheets
+    </a>
     <div class="header-date" id="headerDate"></div>
   </div>
 </header>
@@ -130,6 +136,7 @@
   <button class="tab" onclick="switchTab('receive',this)">📥 <span data-ar="استلام مواد" data-en="Receive">استلام مواد</span></button>
   <button class="tab" onclick="switchTab('history',this)">📋 <span data-ar="سجل الحركة" data-en="Log">سجل الحركة</span></button>
   <button class="tab" onclick="switchTab('alerts',this)">🔔 <span data-ar="التنبيهات" data-en="Alerts">التنبيهات</span></button>
+  <button class="tab" onclick="switchTab('villas',this)">🏠 <span data-ar="تتبع الفلل" data-en="Villa Tracking">تتبع الفلل</span></button>
 </div>
 
 <main>
@@ -187,7 +194,7 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Block</label>
-          <select class="form-control" id="issueBlock">
+          <select class="form-control" id="issueBlock" onchange="updateVillaOptions()">
             <option value="">--</option>
             <option>Block 104</option><option>Block 105</option><option>Block 106</option>
             <option value="General">General / عام</option>
@@ -195,12 +202,20 @@
         </div>
         <div class="form-group">
           <label class="form-label" data-ar="رقم الفيلا" data-en="Villa No.">رقم الفيلا</label>
-          <input type="text" class="form-control" id="issueVilla" placeholder="e.g. 1253">
+          <select class="form-control" id="issueVilla" disabled>
+            <option value="">-- اختر البلوك أولاً --</option>
+          </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
-        <input type="text" class="form-control" id="issueNotes" placeholder="...">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
+          <input type="text" class="form-control" id="issueNotes" placeholder="...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="تاريخ العملية" data-en="Transaction Date">التاريخ / Date</label>
+          <input type="date" class="form-control" id="issueDate">
+        </div>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px;" onclick="processIssue()">✅ <span data-ar="تأكيد الصرف" data-en="Confirm Issue">تأكيد الصرف</span></button>
     </div>
@@ -238,9 +253,15 @@
           <input type="text" class="form-control" id="receiveInvoice" placeholder="INV-001">
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
-        <input type="text" class="form-control" id="receiveNotes" placeholder="...">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
+          <input type="text" class="form-control" id="receiveNotes" placeholder="...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="تاريخ العملية" data-en="Transaction Date">التاريخ / Date</label>
+          <input type="date" class="form-control" id="receiveDate">
+        </div>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px;" onclick="processReceive()">✅ <span data-ar="تأكيد الاستلام" data-en="Confirm Receipt">تأكيد الاستلام</span></button>
     </div>
@@ -261,6 +282,35 @@
 <!-- ALERTS -->
 <div class="page" id="page-alerts">
   <div id="alertsContent"></div>
+</div>
+
+
+<!-- VILLA TRACKING PAGE -->
+<div class="page" id="page-villas">
+  <div class="stats-grid" id="villaStatsGrid"></div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">🏠 <span data-ar="تتبع استهلاك المواد لكل فيلا" data-en="Material Consumption per Villa">تتبع الفلل</span></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select class="form-control" id="villaBlockFilter" onchange="renderVillaPage()" style="width:140px;padding:8px 12px;">
+          <option value="">كل البلوكات / All</option>
+          <option value="Block 104">Block 104</option>
+          <option value="Block 105">Block 105</option>
+          <option value="Block 106">Block 106</option>
+        </select>
+        <select class="form-control" id="villaMaterialFilter" onchange="renderVillaPage()" style="width:180px;padding:8px 12px;">
+          <option value="">كل المواد / All Materials</option>
+        </select>
+        <select class="form-control" id="villaStatusFilter" onchange="renderVillaPage()" style="width:150px;padding:8px 12px;">
+          <option value="">كل الحالات / All</option>
+          <option value="over">تجاوزت الحد / Over</option>
+          <option value="ok">ضمن الحد / OK</option>
+          <option value="no-limit">بدون حد / No Limit</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;"><table><thead id="villaTableHead"></thead><tbody id="villaTableBody"></tbody></table></div>
+  </div>
 </div>
 
 </main>
@@ -338,6 +388,20 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('confirmDelete');openModal('editMaterial')">Cancel / إلغاء</button>
       <button class="btn btn-danger" onclick="deleteMaterial()">🗑 <span data-ar="نعم، احذف" data-en="Yes, Delete">نعم، احذف</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Villa Limits -->
+<div class="modal-overlay" id="modal-villaLimits">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">🏠 <span id="villaModalTitle">تحديد حدود الفيلا</span></div>
+    <input type="hidden" id="villaModalKey">
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;" id="villaModalSub"></p>
+    <div id="villaLimitFields" style="max-height:380px;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('villaLimits')">Cancel / إلغاء</button>
+      <button class="btn btn-primary" onclick="saveVillaLimits()">Save / حفظ</button>
     </div>
   </div>
 </div>
@@ -470,6 +534,7 @@ function renderAll() {
   if(currentTab==='receive') renderReceivePage();
   if(currentTab==='history') renderHistory();
   if(currentTab==='alerts') renderAlerts();
+  if(currentTab==='villas') renderVillaPage();
 }
 
 // ===================== INVENTORY =====================
@@ -516,6 +581,8 @@ function renderStats(){
 // ===================== ISSUE =====================
 function renderIssuePage(){
   document.getElementById('issueMaterial').innerHTML=materials.map(m=>`<option value="${m.id}">${m.name} (${m.qty} ${m.unit})</option>`).join('');
+  const issueDateEl = document.getElementById('issueDate');
+  if (!issueDateEl.value) issueDateEl.value = new Date().toISOString().slice(0,10);
 }
 
 function renderRecentIssues(){
@@ -529,6 +596,33 @@ function renderRecentIssues(){
     <td><span style="color:var(--red);font-weight:700">-${tx.qty}</span> ${tx.unit}</td>
     <td>${tx.receiver||'-'}</td><td>${tx.block||'-'}</td><td>${tx.villa||'-'}</td>
   </tr>`).join('');
+}
+
+function updateVillaOptions() {
+  const block = document.getElementById('issueBlock').value;
+  const villaSelect = document.getElementById('issueVilla');
+
+  if (!block || block === 'General') {
+    villaSelect.innerHTML = `<option value="">${lang==='ar'?'عام / لا يوجد فيلا محددة':'General / No specific villa'}</option>`;
+    villaSelect.disabled = true;
+    return;
+  }
+
+  const ranges = {
+    'Block 104': {start:1253, end:1269},
+    'Block 105': {start:1270, end:1298},
+    'Block 106': {start:1299, end:1327},
+  };
+
+  const r = ranges[block];
+  if (!r) return;
+
+  let options = `<option value="">${lang==='ar'?'-- اختر الفيلا --':'-- Select Villa --'}</option>`;
+  for (let i = r.start; i <= r.end; i++) {
+    options += `<option value="${i}">${i}</option>`;
+  }
+  villaSelect.innerHTML = options;
+  villaSelect.disabled = false;
 }
 
 async function processIssue(){
@@ -545,10 +639,17 @@ async function processIssue(){
   if(!mat)return;
   if(qty>mat.qty){showToast(`${t('errExceed')} (${mat.qty})`, 'error');return;}
   mat.qty-=qty;
-  const tx={id:Date.now(),type:'out',matId,matName:mat.name,unit:mat.unit,qty,receiver:`${receiver} — ${receiverName}`,block,villa,notes,date:new Date().toLocaleString(lang==='ar'?'ar-SA':'en-GB')};
+  const issueDateVal = document.getElementById('issueDate').value;
+  const issueDateObj = issueDateVal ? new Date(issueDateVal) : new Date();
+  const issueDateStr = issueDateObj.toLocaleDateString(lang==='ar'?'ar-SA':'en-GB', {year:'numeric',month:'2-digit',day:'2-digit'});
+  const tx={id:Date.now(),type:'out',matId,matName:mat.name,unit:mat.unit,qty,receiver:`${receiver} — ${receiverName}`,block,villa,notes,date:issueDateStr};
   transactions.push(tx);
   showToast(`✅ ${qty} ${mat.unit} ${t('from')} ${mat.name}`,'success');
-  ['issueQty','issueReceiverName','issueVilla','issueNotes'].forEach(id=>document.getElementById(id).value='');
+  ['issueQty','issueReceiverName','issueNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('issueBlock').value='';
+  document.getElementById('issueVilla').innerHTML='<option value="">-- اختر البلوك أولاً --</option>';
+  document.getElementById('issueVilla').disabled=true;
+  document.getElementById('issueDate').value = new Date().toISOString().slice(0,10);
   renderIssuePage();renderRecentIssues();renderStats();renderInventory();
   await syncMaterials();
   await addTransactionToSheet(tx);
@@ -557,6 +658,8 @@ async function processIssue(){
 // ===================== RECEIVE =====================
 function renderReceivePage(){
   document.getElementById('receiveMaterial').innerHTML=materials.map(m=>`<option value="${m.id}">${m.name} (${m.qty} ${m.unit})</option>`).join('');
+  const receiveDateEl = document.getElementById('receiveDate');
+  if (!receiveDateEl.value) receiveDateEl.value = new Date().toISOString().slice(0,10);
 }
 
 async function processReceive(){
@@ -569,10 +672,14 @@ async function processReceive(){
   const mat=materials.find(m=>m.id===matId);
   if(!mat)return;
   mat.qty+=qty;
-  const tx={id:Date.now(),type:'in',matId,matName:mat.name,unit:mat.unit,qty,receiver:supplier,block:'',villa:'',notes:invoice?`Invoice:${invoice}. ${notes}`:notes,date:new Date().toLocaleString(lang==='ar'?'ar-SA':'en-GB')};
+  const receiveDateVal = document.getElementById('receiveDate').value;
+  const receiveDateObj = receiveDateVal ? new Date(receiveDateVal) : new Date();
+  const receiveDateStr = receiveDateObj.toLocaleDateString(lang==='ar'?'ar-SA':'en-GB', {year:'numeric',month:'2-digit',day:'2-digit'});
+  const tx={id:Date.now(),type:'in',matId,matName:mat.name,unit:mat.unit,qty,receiver:supplier,block:'',villa:'',notes:invoice?`Invoice:${invoice}. ${notes}`:notes,date:receiveDateStr};
   transactions.push(tx);
   showToast(`✅ +${qty} ${mat.unit} — ${mat.name}`,'success');
   ['receiveQty','receiveSupplier','receiveInvoice','receiveNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('receiveDate').value = new Date().toISOString().slice(0,10);
   renderReceivePage();
   await syncMaterials();
   await addTransactionToSheet(tx);
@@ -689,6 +796,209 @@ function showToast(msg,type='success'){
   const el=document.getElementById('toast');
   el.textContent=msg;el.className=`toast ${type} show`;
   setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+
+// ===================== VILLA TRACKING =====================
+// villaLimits: { "Block 104-1253": { matId: maxQty, ... }, ... }
+// villaConsumption computed from transactions
+
+let villaLimits = JSON.parse(localStorage.getItem('wh_villaLimits') || '{}');
+
+const BLOCKS = {
+  'Block 104': Array.from({length:17}, (_,i) => 1253+i),
+  'Block 105': Array.from({length:29}, (_,i) => 1270+i),
+  'Block 106': Array.from({length:29}, (_,i) => 1299+i),
+};
+
+function villaKey(block, villa) { return block + '-' + villa; }
+
+function saveVillaLimitsLocal() {
+  localStorage.setItem('wh_villaLimits', JSON.stringify(villaLimits));
+}
+
+// Compute consumption per villa per material from transactions
+function computeConsumption() {
+  const cons = {}; // { "Block 104-1253": { matId: qty } }
+  transactions.forEach(tx => {
+    if (tx.type !== 'out' || !tx.villa || !tx.block) return;
+    const k = villaKey(tx.block, tx.villa);
+    if (!cons[k]) cons[k] = {};
+    const id = String(tx.matId);
+    cons[k][id] = (cons[k][id] || 0) + Number(tx.qty);
+  });
+  return cons;
+}
+
+function renderVillaStats() {
+  const cons = computeConsumption();
+  let overCount = 0, okCount = 0, noLimitCount = 0, totalVillas = 0;
+  Object.values(BLOCKS).forEach(villas => totalVillas += villas.length);
+  Object.entries(cons).forEach(([k, matCons]) => {
+    const limits = villaLimits[k] || {};
+    let hasOver = false;
+    Object.entries(matCons).forEach(([matId, qty]) => {
+      if (limits[matId] !== undefined) {
+        if (qty > limits[matId]) hasOver = true;
+      }
+    });
+    if (hasOver) overCount++;
+  });
+  const villasWithData = Object.keys(cons).length;
+  noLimitCount = villasWithData - overCount;
+  okCount = villasWithData - overCount;
+
+  document.getElementById('villaStatsGrid').innerHTML = `
+    <div class="stat-card orange"><div class="stat-label">${lang==='ar'?'إجمالي الفلل':'Total Villas'}</div><div class="stat-value">${totalVillas}</div><div class="stat-sub">Block 104/105/106</div></div>
+    <div class="stat-card green"><div class="stat-label">${lang==='ar'?'فلل نشطة':'Active Villas'}</div><div class="stat-value">${villasWithData}</div><div class="stat-sub">${lang==='ar'?'لها حركات':'with transactions'}</div></div>
+    <div class="stat-card red"><div class="stat-label">${lang==='ar'?'تجاوزت الحد':'Over Limit'}</div><div class="stat-value">${overCount}</div><div class="stat-sub">${lang==='ar'?'فيلا':'villas'}</div></div>
+    <div class="stat-card yellow"><div class="stat-label">${lang==='ar'?'فلل بدون بيانات':'No Activity'}</div><div class="stat-value">${totalVillas - villasWithData}</div><div class="stat-sub">${lang==='ar'?'لم يصرف لها بعد':'no issues yet'}</div></div>`;
+}
+
+function renderVillaPage() {
+  renderVillaStats();
+  // Update material filter
+  const matFilter = document.getElementById('villaMaterialFilter');
+  const currentMat = matFilter.value;
+  matFilter.innerHTML = `<option value="">${lang==='ar'?'كل المواد':'All Materials'}</option>` +
+    materials.map(m => `<option value="${m.id}" ${currentMat==m.id?'selected':''}>${m.name}</option>`).join('');
+
+  const blockFilter = document.getElementById('villaBlockFilter').value;
+  const materialFilter = document.getElementById('villaMaterialFilter').value;
+  const statusFilter = document.getElementById('villaStatusFilter').value;
+  const cons = computeConsumption();
+
+  // Build rows
+  let rows = [];
+  Object.entries(BLOCKS).forEach(([block, villas]) => {
+    if (blockFilter && block !== blockFilter) return;
+    villas.forEach(villa => {
+      const k = villaKey(block, villa);
+      const villaCons = cons[k] || {};
+      const limits = villaLimits[k] || {};
+
+      // Filter by material
+      const matsToShow = materialFilter
+        ? materials.filter(m => String(m.id) === materialFilter)
+        : materials;
+
+      let hasOver = false, hasData = false;
+      matsToShow.forEach(m => {
+        const used = villaCons[m.id] || 0;
+        const lim = limits[m.id];
+        if (used > 0) hasData = true;
+        if (lim !== undefined && used > lim) hasOver = true;
+      });
+
+      if (statusFilter === 'over' && !hasOver) return;
+      if (statusFilter === 'ok' && (hasOver || !hasData)) return;
+      if (statusFilter === 'no-limit') {
+        const hasAnyLimit = matsToShow.some(m => limits[m.id] !== undefined);
+        if (hasAnyLimit) return;
+      }
+
+      rows.push({block, villa, k, villaCons, limits, matsToShow, hasOver, hasData});
+    });
+  });
+
+  // Table headers
+  const matsToShow = materialFilter
+    ? materials.filter(m => String(m.id) === materialFilter)
+    : materials;
+
+  document.getElementById('villaTableHead').innerHTML = `<tr>
+    <th>${lang==='ar'?'البلوك':'Block'}</th>
+    <th>${lang==='ar'?'الفيلا':'Villa'}</th>
+    ${matsToShow.map(m=>`<th style="white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="${m.name}">${m.name.length>12?m.name.slice(0,12)+'…':m.name}<br><span style="color:var(--text2);font-weight:400;font-size:10px;">${m.unit}</span></th>`).join('')}
+    <th>${lang==='ar'?'الحالة':'Status'}</th>
+    <th>${lang==='ar'?'إجراء':'Action'}</th>
+  </tr>`;
+
+  if (!rows.length) {
+    document.getElementById('villaTableBody').innerHTML = `<tr><td colspan="${matsToShow.length+4}"><div class="empty-state"><div class="icon">🏠</div><h3>${lang==='ar'?'لا توجد فلل بهذه الفلاتر':'No villas match filters'}</h3></div></td></tr>`;
+    return;
+  }
+
+  document.getElementById('villaTableBody').innerHTML = rows.map(({block,villa,k,villaCons,limits,matsToShow,hasOver,hasData}) => {
+    const cells = matsToShow.map(m => {
+      const used = villaCons[m.id] || 0;
+      const lim = limits[m.id];
+      if (!used && lim === undefined) return `<td style="color:var(--text2);text-align:center;">—</td>`;
+      const over = lim !== undefined && used > lim;
+      const pct = lim ? Math.min(100, Math.round((used/lim)*100)) : 0;
+      const fc = over ? '#ef4444' : '#22c55e';
+      return `<td style="text-align:center;">
+        <div style="font-weight:700;color:${over?'var(--red)':used>0?'var(--green)':'var(--text2)'};">${used}</div>
+        ${lim !== undefined ? `<div style="font-size:10px;color:var(--text2);">/ ${lim}</div>
+        <div class="progress-bar" style="margin:4px auto;width:60px;"><div class="progress-fill" style="width:${pct}%;background:${fc}"></div></div>
+        ${over ? `<div style="font-size:10px;color:var(--red);font-weight:600;">+${used-lim}</div>` : ''}` : `<div style="font-size:10px;color:var(--text2);">—</div>`}
+      </td>`;
+    }).join('');
+
+    const statusBadge = hasOver
+      ? `<span class="badge badge-red">${lang==='ar'?'تجاوز':'Over'}</span>`
+      : hasData
+        ? `<span class="badge badge-green">${lang==='ar'?'ضمن الحد':'OK'}</span>`
+        : `<span class="badge" style="background:rgba(139,144,167,0.15);color:var(--text2);">${lang==='ar'?'لا حركة':'No activity'}</span>`;
+
+    return `<tr>
+      <td><span class="badge badge-blue">${block}</span></td>
+      <td style="font-weight:700;">${villa}</td>
+      ${cells}
+      <td>${statusBadge}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openVillaLimitsModal('${block}','${villa}')">⚙ ${lang==='ar'?'حدود':'Limits'}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openVillaLimitsModal(block, villa) {
+  const k = villaKey(block, villa);
+  const limits = villaLimits[k] || {};
+  const cons = computeConsumption();
+  const villaCons = cons[k] || {};
+  document.getElementById('villaModalKey').value = k;
+  document.getElementById('villaModalTitle').textContent = `${lang==='ar'?'حدود الفيلا':'Villa Limits'} — ${villa} (${block})`;
+  document.getElementById('villaModalSub').textContent = lang==='ar'
+    ? 'حدد الحد الأقصى لكل مادة لهذه الفيلا'
+    : 'Set the maximum quantity per material for this villa';
+
+  document.getElementById('villaLimitFields').innerHTML = materials.map(m => {
+    const used = villaCons[m.id] || 0;
+    const lim = limits[m.id] !== undefined ? limits[m.id] : '';
+    const over = lim !== '' && used > lim;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${m.name}</div>
+        <div style="font-size:11px;color:var(--text2);">${lang==='ar'?'مستهلك':'Used'}: <span style="color:${over?'var(--red)':'var(--green)'};">${used} ${m.unit}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;color:var(--text2);">${lang==='ar'?'الحد الأقصى':'Max'}</label>
+        <input type="number" min="0" value="${lim}" placeholder="—"
+          style="width:80px;background:var(--surface2);border:1px solid ${over?'var(--red)':'var(--border)'};border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;"
+          data-mat-id="${m.id}">
+      </div>
+    </div>`;
+  }).join('');
+
+  openModal('villaLimits');
+}
+
+function saveVillaLimits() {
+  const k = document.getElementById('villaModalKey').value;
+  if (!villaLimits[k]) villaLimits[k] = {};
+  document.querySelectorAll('#villaLimitFields input[data-mat-id]').forEach(inp => {
+    const matId = inp.getAttribute('data-mat-id');
+    const val = inp.value.trim();
+    if (val === '' || val === null) {
+      delete villaLimits[k][matId];
+    } else {
+      villaLimits[k][matId] = parseInt(val);
+    }
+  });
+  saveVillaLimitsLocal();
+  closeModal('villaLimits');
+  renderVillaPage();
+  showToast('✅ ' + (lang==='ar'?'تم حفظ الحدود':'Limits saved'), 'success');
 }
 
 // ===================== INIT =====================
