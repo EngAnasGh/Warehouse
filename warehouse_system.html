@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Management — نظام إدارة المستودع</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#222636;--border:#2e3347;
+    --accent:#f0a500;--accent2:#e05c2a;--green:#22c55e;--red:#ef4444;
+    --yellow:#f59e0b;--text:#e8eaf0;--text2:#8b90a7;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .logo-text{font-size:15px;font-weight:700;}
+  .logo-sub{font-size:10px;color:var(--text2);}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .sync-status{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:6px;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text2);}
+  .sync-dot.ok{background:var(--green);}
+  .sync-dot.syncing{background:var(--yellow);animation:pulse 1s infinite;}
+  .sync-dot.error{background:var(--red);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .lang-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .lang-btn{padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all 0.2s;}
+  .lang-btn.active{background:var(--accent);color:#000;}
+  .header-date{font-size:12px;color:var(--text2);background:var(--surface2);padding:6px 12px;border-radius:20px;border:1px solid var(--border);white-space:nowrap;}
+  .nav-tabs{display:flex;gap:4px;padding:16px 24px 0;border-bottom:1px solid var(--border);overflow-x:auto;}
+  .tab{padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);background:transparent;border:none;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:inherit;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2);}
+  .tab:hover:not(.active){color:var(--text);background:var(--surface2);}
+  main{padding:24px;max-width:1400px;margin:0 auto;}
+  .page{display:none;}.page.active{display:block;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;}
+  .stat-card.orange::before{background:var(--accent);}
+  .stat-card.green::before{background:var(--green);}
+  .stat-card.red::before{background:var(--red);}
+  .stat-card.yellow::before{background:var(--yellow);}
+  .stat-label{font-size:11px;color:var(--text2);margin-bottom:6px;}
+  .stat-value{font-size:26px;font-weight:700;}
+  .stat-sub{font-size:10px;color:var(--text2);margin-top:4px;}
+  .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .table-title{font-size:14px;font-weight:600;}
+  .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#000;}.btn-primary:hover{background:#d4920a;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}.btn-secondary:hover{background:var(--border);}
+  .btn-sm{padding:5px 10px;font-size:12px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:var(--surface2);padding:11px 14px;text-align:right;font-weight:600;font-size:11px;color:var(--text2);white-space:nowrap;}
+  td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,0.02);}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge-green{background:rgba(34,197,94,0.15);color:var(--green);}
+  .badge-red{background:rgba(239,68,68,0.15);color:var(--red);}
+  .badge-yellow{background:rgba(245,158,11,0.15);color:var(--yellow);}
+  .badge-blue{background:rgba(59,130,246,0.15);color:#60a5fa;}
+  .progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;width:70px;}
+  .progress-fill{height:100%;border-radius:3px;transition:width 0.3s;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:20px;}
+  .form-group{margin-bottom:14px;}
+  .form-label{font-size:11px;color:var(--text2);margin-bottom:5px;display:block;font-weight:600;}
+  .form-control{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);font-family:inherit;transition:border-color 0.2s;outline:none;}
+  .form-control:focus{border-color:var(--accent);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .alert-warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:var(--yellow);}
+  .alert-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);}
+  .search-bar{position:relative;flex:1;min-width:180px;max-width:280px;}
+  .search-bar input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 32px 8px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;}
+  .search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text2);}
+  .empty-state .icon{font-size:42px;margin-bottom:14px;}
+  .empty-state h3{font-size:15px;margin-bottom:6px;color:var(--text);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 18px;font-size:13px;z-index:999;transition:transform 0.3s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.success{border-color:var(--green);color:var(--green);}
+  .toast.error{border-color:var(--red);color:var(--red);}
+  .loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+  .loading-overlay.hidden{display:none;}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:14px;color:var(--text2);}
+  @media(max-width:600px){main{padding:14px;}.form-row{grid-template-columns:1fr;}.stats-grid{grid-template-columns:1fr 1fr;}th,td{padding:9px 10px;}header{height:auto;padding:10px 14px;}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">جاري تحميل البيانات من Google Sheets...</div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏗</div>
+    <div>
+      <div class="logo-text">Warehouse Management — نظام إدارة المستودع</div>
+      <div class="logo-sub">ROSHN Precast · 75 Villas · Block 104 / 105 / 106</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status" id="syncStatus">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncText">جاري الاتصال...</span>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('ar')">العربية</button>
+      <button class="lang-btn" onclick="setLang('en')">English</button>
+    </div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+</header>
+
+<div class="nav-tabs">
+  <button class="tab active" onclick="switchTab('inventory',this)">📦 <span data-ar="المخزون" data-en="Inventory">المخزون</span></button>
+  <button class="tab" onclick="switchTab('issue',this)">📤 <span data-ar="صرف مواد" data-en="Issue">صرف مواد</span></button>
+  <button class="tab" onclick="switchTab('receive',this)">📥 <span data-ar="استلام مواد" data-en="Receive">استلام مواد</span></button>
+  <button class="tab" onclick="switchTab('history',this)">📋 <span data-ar="سجل الحركة" data-en="Log">سجل الحركة</span></button>
+  <button class="tab" onclick="switchTab('alerts',this)">🔔 <span data-ar="التنبيهات" data-en="Alerts">التنبيهات</span></button>
+</div>
+
+<main>
+
+<!-- INVENTORY -->
+<div class="page active" id="page-inventory">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title" data-ar="📦 المواد في المستودع" data-en="📦 Warehouse Materials">📦 المواد في المستودع</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="ابحث / Search..." oninput="filterInventory(this.value)">
+          <span class="search-icon">🔍</span>
+        </div>
+        <button class="btn btn-secondary" onclick="loadFromSheets()" title="Refresh from Google Sheets">🔄</button>
+        <button class="btn btn-primary" onclick="openModal('addMaterial')">＋ <span data-ar="إضافة مادة" data-en="Add Material">إضافة مادة</span></button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;"><table><thead id="inventoryHead"></thead><tbody id="inventoryBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ISSUE -->
+<div class="page" id="page-issue">
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title" data-ar="📤 صرف مواد" data-en="📤 Issue Materials">📤 صرف مواد</div>
+    </div>
+    <div style="padding:20px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="المادة" data-en="Material">المادة</label>
+          <select class="form-control" id="issueMaterial"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="الكمية" data-en="Quantity">الكمية</label>
+          <input type="number" class="form-control" id="issueQty" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="الجهة المستلمة" data-en="Receiver Type">الجهة المستلمة</label>
+          <select class="form-control" id="issueReceiver">
+            <option value="">--</option>
+            <option value="مقاول">مقاول / Contractor</option>
+            <option value="عمالة مباشرة">عمالة مباشرة / Direct Labor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="الاسم" data-en="Name">الاسم / Name</label>
+          <input type="text" class="form-control" id="issueReceiverName" placeholder="...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Block</label>
+          <select class="form-control" id="issueBlock">
+            <option value="">--</option>
+            <option>Block 104</option><option>Block 105</option><option>Block 106</option>
+            <option value="General">General / عام</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="رقم الفيلا" data-en="Villa No.">رقم الفيلا</label>
+          <input type="text" class="form-control" id="issueVilla" placeholder="e.g. 1253">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
+        <input type="text" class="form-control" id="issueNotes" placeholder="...">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px;" onclick="processIssue()">✅ <span data-ar="تأكيد الصرف" data-en="Confirm Issue">تأكيد الصرف</span></button>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title" data-ar="آخر عمليات الصرف" data-en="Recent Issues">آخر عمليات الصرف</div></div>
+    <div style="overflow-x:auto;"><table><thead id="recentIssueHead"></thead><tbody id="recentIssues"></tbody></table></div>
+  </div>
+</div>
+
+<!-- RECEIVE -->
+<div class="page" id="page-receive">
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title" data-ar="📥 استلام مواد من المورد" data-en="📥 Receive from Supplier">📥 استلام مواد</div>
+    </div>
+    <div style="padding:20px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="المادة" data-en="Material">المادة</label>
+          <select class="form-control" id="receiveMaterial"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-ar="الكمية المستلمة" data-en="Quantity">الكمية</label>
+          <input type="number" class="form-control" id="receiveQty" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-ar="المورد" data-en="Supplier">المورد / Supplier</label>
+          <input type="text" class="form-control" id="receiveSupplier" placeholder="...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Invoice No.</label>
+          <input type="text" class="form-control" id="receiveInvoice" placeholder="INV-001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-ar="ملاحظات" data-en="Notes">ملاحظات / Notes</label>
+        <input type="text" class="form-control" id="receiveNotes" placeholder="...">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px;" onclick="processReceive()">✅ <span data-ar="تأكيد الاستلام" data-en="Confirm Receipt">تأكيد الاستلام</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title" data-ar="📋 سجل جميع الحركات" data-en="📋 Full Transaction Log">📋 سجل الحركات</div>
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+    <div style="overflow-x:auto;"><table><thead id="historyHead"></thead><tbody id="historyBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="page" id="page-alerts">
+  <div id="alertsContent"></div>
+</div>
+
+</main>
+
+<!-- MODAL: Add -->
+<div class="modal-overlay" id="modal-addMaterial">
+  <div class="modal">
+    <div class="modal-title">➕ <span data-ar="إضافة مادة جديدة" data-en="Add New Material">إضافة مادة جديدة</span></div>
+    <div class="form-group">
+      <label class="form-label">Material Name / اسم المادة</label>
+      <input type="text" class="form-control" id="newMatName" placeholder="e.g. DCP Flo-Grout 2">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Unit / الوحدة</label>
+        <select class="form-control" id="newMatUnit">
+          <option>bag</option><option>pcs</option><option>Tube</option><option>liter</option><option>kg</option><option>m</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-ar="الكمية الابتدائية" data-en="Opening Qty">الكمية</label>
+        <input type="number" class="form-control" id="newMatQty" min="0" value="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Min Alert Level / الحد الأدنى</label>
+      <input type="number" class="form-control" id="newMatMin" min="0" value="5">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addMaterial')">Cancel / إلغاء</button>
+      <button class="btn btn-primary" onclick="addMaterial()">Save / حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit -->
+<div class="modal-overlay" id="modal-editMaterial">
+  <div class="modal">
+    <div class="modal-title">⚙ <span data-ar="تعديل الحد الأدنى" data-en="Edit Min Level">تعديل الحد الأدنى</span></div>
+    <input type="hidden" id="editMatId">
+    <div class="form-group">
+      <label class="form-label">Min Alert Level / الحد الأدنى</label>
+      <input type="number" class="form-control" id="editMatMin" min="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('editMaterial')">Cancel / إلغاء</button>
+      <button class="btn btn-primary" onclick="saveEditMaterial()">Save / حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== CONFIG =====================
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzkNUH3xmuvv4qiOvWfew1TkVy2iLfY46p4R48b1tMtRM6U3dnWBCy5xwsJIgNRsGF3Yw/exec';
+
+// ===================== LANGUAGE =====================
+let lang = 'ar';
+const T = {
+  ar:{totalMats:'إجمالي المواد',available:'مواد متوفرة',low:'مخزون منخفض',empty:'نفذت المواد',diffTypes:'نوع مختلف',sufficient:'مخزون كافٍ',belowMin:'تحت الحد الأدنى',needRefill:'يحتاج تعبئة',statusOk:'متوفر',statusLow:'منخفض',statusEmpty:'نفذ',num:'#',matName:'اسم المادة',unit:'الوحدة',currentQty:'الكمية الحالية',minLevel:'الحد الأدنى',status:'الحالة',progress:'المستوى',action:'إجراء',date:'التاريخ',type:'النوع',qty:'الكمية',receiver:'المستلم',block:'البلوك',villa:'الفيلا',notes:'ملاحظات',datetime:'التاريخ والوقت',typeIn:'📥 وارد',typeOut:'📤 صادر',alertTitle1:'🚨 مواد نفذت',alertTitle2:'⚠️ مخزون منخفض',alertTitle3:'✅ مواد بمخزون كافٍ',zeroQty:'الكمية: صفر',minNote:'الحد الأدنى:',noMats:'لا توجد مواد',noTx:'لا توجد حركات بعد',noIssues:'لا توجد عمليات صرف بعد',allGood:'كل المواد بمستوى جيد',errQty:'أدخل الكمية',errReceiver:'اختر جهة الاستلام',errExceed:'الكمية المطلوبة أكبر من المتاح',errName:'أدخل اسم المادة',from:'من',syncOk:'متصل بـ Google Sheets',syncing:'جاري المزامنة...',syncErr:'خطأ في الاتصال',loading:'جاري تحميل البيانات...'},
+  en:{totalMats:'Total Materials',available:'Available',low:'Low Stock',empty:'Out of Stock',diffTypes:'types',sufficient:'sufficient',belowMin:'below minimum',needRefill:'needs restock',statusOk:'Available',statusLow:'Low',statusEmpty:'Empty',num:'#',matName:'Material Name',unit:'Unit',currentQty:'Current Qty',minLevel:'Min Level',status:'Status',progress:'Level',action:'Action',date:'Date',type:'Type',qty:'Qty',receiver:'Receiver',block:'Block',villa:'Villa',notes:'Notes',datetime:'Date & Time',typeIn:'📥 In',typeOut:'📤 Out',alertTitle1:'🚨 Out of Stock',alertTitle2:'⚠️ Low Stock',alertTitle3:'✅ Sufficient Stock',zeroQty:'Qty: Zero',minNote:'Min:',noMats:'No materials',noTx:'No transactions yet',noIssues:'No issues yet',allGood:'All materials OK',errQty:'Enter quantity',errReceiver:'Select receiver',errExceed:'Qty exceeds available stock',errName:'Enter material name',from:'from',syncOk:'Connected to Google Sheets',syncing:'Syncing...',syncErr:'Connection error',loading:'Loading data...'}
+};
+function t(k){return T[lang][k]||k;}
+
+function setLang(l){
+  lang=l;
+  document.documentElement.lang=l;
+  document.documentElement.dir=l==='ar'?'rtl':'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent.trim()===(l==='ar'?'العربية':'English')));
+  document.querySelectorAll('[data-ar]').forEach(el=>{const v=el.getAttribute('data-'+l);if(v)el.textContent=v;});
+  renderAll();
+}
+
+// ===================== DATA =====================
+let materials = [];
+let transactions = [];
+let nextId = 11;
+let currentTab = 'inventory';
+
+const DEFAULT_MATERIALS = [
+  {id:1,name:'DCP Flo-Grout 2',unit:'bag',qty:0,min:10},
+  {id:2,name:'Saveto',unit:'bag',qty:0,min:10},
+  {id:3,name:'DCP Cemfair FD',unit:'bag',qty:0,min:10},
+  {id:4,name:'Sealant Prokem',unit:'Tube',qty:0,min:20},
+  {id:5,name:'Steel Bars T12-4m',unit:'pcs',qty:0,min:50},
+  {id:6,name:'Steel Bars T12-2.8m',unit:'pcs',qty:0,min:50},
+  {id:7,name:'Steel Bars T12-1.8m',unit:'pcs',qty:0,min:50},
+  {id:8,name:'Galvanised Steel Plate',unit:'pcs',qty:0,min:30},
+  {id:9,name:'Washers',unit:'pcs',qty:0,min:100},
+  {id:10,name:'Nuts',unit:'pcs',qty:0,min:100},
+];
+
+// ===================== GOOGLE SHEETS =====================
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  dot.className = 'sync-dot ' + state;
+  text.textContent = msg || t('sync'+state.charAt(0).toUpperCase()+state.slice(1));
+}
+
+async function callSheets(payload) {
+  const resp = await fetch(SHEET_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  return await resp.json();
+}
+
+async function loadFromSheets() {
+  setSyncStatus('syncing', t('syncing'));
+  try {
+    const data = await callSheets({type: 'get_data'});
+    if (data.materials && data.materials.length > 0) {
+      materials = data.materials.map(m => ({
+        id: Number(m.id), name: m.name, unit: m.unit,
+        qty: Number(m.qty), min: Number(m.min)
+      }));
+      nextId = Math.max(...materials.map(m=>m.id), 0) + 1;
+    } else {
+      // First time — push defaults
+      materials = DEFAULT_MATERIALS;
+      await syncMaterials();
+    }
+    if (data.transactions) {
+      transactions = data.transactions.map(tx => ({
+        ...tx, qty: Number(tx.qty)
+      }));
+    }
+    setSyncStatus('ok', t('syncOk'));
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    renderAll();
+  } catch(err) {
+    setSyncStatus('error', t('syncErr'));
+    // Fallback to defaults
+    materials = DEFAULT_MATERIALS;
+    transactions = [];
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    showToast('⚠️ ' + t('syncErr') + ' — offline mode', 'error');
+    renderAll();
+  }
+}
+
+async function syncMaterials() {
+  setSyncStatus('syncing', t('syncing'));
+  try {
+    await callSheets({type: 'sync_materials', materials});
+    setSyncStatus('ok', t('syncOk'));
+  } catch(e) {
+    setSyncStatus('error', t('syncErr'));
+  }
+}
+
+async function addTransactionToSheet(tx) {
+  setSyncStatus('syncing', t('syncing'));
+  try {
+    await callSheets({type: 'add_transaction', transaction: tx});
+    setSyncStatus('ok', t('syncOk'));
+  } catch(e) {
+    setSyncStatus('error', t('syncErr'));
+  }
+}
+
+// ===================== TABS =====================
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('page-'+tab).classList.add('active');
+  currentTab = tab;
+  renderAll();
+}
+
+function renderAll() {
+  if(currentTab==='inventory'){renderStats();renderInventory();}
+  if(currentTab==='issue'){renderIssuePage();renderRecentIssues();}
+  if(currentTab==='receive') renderReceivePage();
+  if(currentTab==='history') renderHistory();
+  if(currentTab==='alerts') renderAlerts();
+}
+
+// ===================== INVENTORY =====================
+function getStatus(m){
+  if(m.qty===0) return {label:t('statusEmpty'),cls:'badge-red'};
+  if(m.qty<=m.min) return {label:t('statusLow'),cls:'badge-yellow'};
+  return {label:t('statusOk'),cls:'badge-green'};
+}
+
+function renderInventory(filter=''){
+  document.getElementById('inventoryHead').innerHTML=`<tr>${[t('num'),t('matName'),t('unit'),t('currentQty'),t('minLevel'),t('status'),t('progress'),t('action')].map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  const body=document.getElementById('inventoryBody');
+  const filtered=materials.filter(m=>m.name.toLowerCase().includes(filter.toLowerCase()));
+  if(!filtered.length){body.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="icon">📦</div><h3>${t('noMats')}</h3></div></td></tr>`;return;}
+  body.innerHTML=filtered.map((m,i)=>{
+    const s=getStatus(m);
+    const pct=m.min>0?Math.min(100,Math.round((m.qty/(m.min*3))*100)):(m.qty>0?100:0);
+    const fc=m.qty===0?'#ef4444':m.qty<=m.min?'#f59e0b':'#22c55e';
+    return `<tr>
+      <td style="color:var(--text2)">${i+1}</td>
+      <td style="font-weight:600">${m.name}</td>
+      <td><span class="badge badge-blue">${m.unit}</span></td>
+      <td style="font-size:15px;font-weight:700">${Number(m.qty).toLocaleString()}</td>
+      <td style="color:var(--text2)">${m.min}</td>
+      <td><span class="badge ${s.cls}">${s.label}</span></td>
+      <td><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${fc}"></div></div></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${m.id})">⚙</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterInventory(v){renderInventory(v);}
+
+function renderStats(){
+  const total=materials.length,low=materials.filter(m=>m.qty>0&&m.qty<=m.min).length;
+  const empty=materials.filter(m=>m.qty===0).length,ok=total-low-empty;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card orange"><div class="stat-label">${t('totalMats')}</div><div class="stat-value">${total}</div><div class="stat-sub">${t('diffTypes')}</div></div>
+    <div class="stat-card green"><div class="stat-label">${t('available')}</div><div class="stat-value">${ok}</div><div class="stat-sub">${t('sufficient')}</div></div>
+    <div class="stat-card yellow"><div class="stat-label">${t('low')}</div><div class="stat-value">${low}</div><div class="stat-sub">${t('belowMin')}</div></div>
+    <div class="stat-card red"><div class="stat-label">${t('empty')}</div><div class="stat-value">${empty}</div><div class="stat-sub">${t('needRefill')}</div></div>`;
+}
+
+// ===================== ISSUE =====================
+function renderIssuePage(){
+  document.getElementById('issueMaterial').innerHTML=materials.map(m=>`<option value="${m.id}">${m.name} (${m.qty} ${m.unit})</option>`).join('');
+}
+
+function renderRecentIssues(){
+  document.getElementById('recentIssueHead').innerHTML=`<tr>${[t('date'),t('matName'),t('qty'),t('receiver'),t('block'),t('villa')].map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  const issues=transactions.filter(tx=>tx.type==='out').slice(-10).reverse();
+  const body=document.getElementById('recentIssues');
+  if(!issues.length){body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:28px">${t('noIssues')}</td></tr>`;return;}
+  body.innerHTML=issues.map(tx=>`<tr>
+    <td style="color:var(--text2);font-size:12px">${tx.date}</td>
+    <td style="font-weight:600">${tx.matName}</td>
+    <td><span style="color:var(--red);font-weight:700">-${tx.qty}</span> ${tx.unit}</td>
+    <td>${tx.receiver||'-'}</td><td>${tx.block||'-'}</td><td>${tx.villa||'-'}</td>
+  </tr>`).join('');
+}
+
+async function processIssue(){
+  const matId=parseInt(document.getElementById('issueMaterial').value);
+  const qty=parseInt(document.getElementById('issueQty').value);
+  const receiver=document.getElementById('issueReceiver').value;
+  const receiverName=document.getElementById('issueReceiverName').value;
+  const block=document.getElementById('issueBlock').value;
+  const villa=document.getElementById('issueVilla').value;
+  const notes=document.getElementById('issueNotes').value;
+  if(!qty||qty<=0){showToast(t('errQty'),'error');return;}
+  if(!receiver){showToast(t('errReceiver'),'error');return;}
+  const mat=materials.find(m=>m.id===matId);
+  if(!mat)return;
+  if(qty>mat.qty){showToast(`${t('errExceed')} (${mat.qty})`, 'error');return;}
+  mat.qty-=qty;
+  const tx={id:Date.now(),type:'out',matId,matName:mat.name,unit:mat.unit,qty,receiver:`${receiver} — ${receiverName}`,block,villa,notes,date:new Date().toLocaleString(lang==='ar'?'ar-SA':'en-GB')};
+  transactions.push(tx);
+  showToast(`✅ ${qty} ${mat.unit} ${t('from')} ${mat.name}`,'success');
+  ['issueQty','issueReceiverName','issueVilla','issueNotes'].forEach(id=>document.getElementById(id).value='');
+  renderIssuePage();renderRecentIssues();renderStats();renderInventory();
+  await syncMaterials();
+  await addTransactionToSheet(tx);
+}
+
+// ===================== RECEIVE =====================
+function renderReceivePage(){
+  document.getElementById('receiveMaterial').innerHTML=materials.map(m=>`<option value="${m.id}">${m.name} (${m.qty} ${m.unit})</option>`).join('');
+}
+
+async function processReceive(){
+  const matId=parseInt(document.getElementById('receiveMaterial').value);
+  const qty=parseInt(document.getElementById('receiveQty').value);
+  const supplier=document.getElementById('receiveSupplier').value;
+  const invoice=document.getElementById('receiveInvoice').value;
+  const notes=document.getElementById('receiveNotes').value;
+  if(!qty||qty<=0){showToast(t('errQty'),'error');return;}
+  const mat=materials.find(m=>m.id===matId);
+  if(!mat)return;
+  mat.qty+=qty;
+  const tx={id:Date.now(),type:'in',matId,matName:mat.name,unit:mat.unit,qty,receiver:supplier,block:'',villa:'',notes:invoice?`Invoice:${invoice}. ${notes}`:notes,date:new Date().toLocaleString(lang==='ar'?'ar-SA':'en-GB')};
+  transactions.push(tx);
+  showToast(`✅ +${qty} ${mat.unit} — ${mat.name}`,'success');
+  ['receiveQty','receiveSupplier','receiveInvoice','receiveNotes'].forEach(id=>document.getElementById(id).value='');
+  renderReceivePage();
+  await syncMaterials();
+  await addTransactionToSheet(tx);
+}
+
+// ===================== HISTORY =====================
+function renderHistory(){
+  document.getElementById('historyHead').innerHTML=`<tr>${[t('datetime'),t('type'),t('matName'),t('qty'),t('receiver'),t('block'),t('villa'),t('notes')].map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  const body=document.getElementById('historyBody');
+  const sorted=[...transactions].reverse();
+  if(!sorted.length){body.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><h3>${t('noTx')}</h3></div></td></tr>`;return;}
+  body.innerHTML=sorted.map(tx=>`<tr>
+    <td style="color:var(--text2);font-size:12px;white-space:nowrap">${tx.date}</td>
+    <td>${tx.type==='in'?`<span class="badge badge-green">${t('typeIn')}</span>`:`<span class="badge badge-red">${t('typeOut')}</span>`}</td>
+    <td style="font-weight:600">${tx.matName}</td>
+    <td style="font-weight:700;color:${tx.type==='in'?'var(--green)':'var(--red)'}">${tx.type==='in'?'+':'-'}${tx.qty} ${tx.unit}</td>
+    <td>${tx.receiver||'-'}</td><td>${tx.block||'-'}</td><td>${tx.villa||'-'}</td>
+    <td style="color:var(--text2);font-size:12px">${tx.notes||'-'}</td>
+  </tr>`).join('');
+}
+
+// ===================== ALERTS =====================
+function renderAlerts(){
+  const emptyMats=materials.filter(m=>m.qty===0);
+  const lowMats=materials.filter(m=>m.qty>0&&m.qty<=m.min);
+  const okMats=materials.filter(m=>m.qty>m.min);
+  let html='';
+  if(emptyMats.length) html+=`<div style="margin-bottom:18px"><h3 style="font-size:13px;color:var(--red);margin-bottom:10px">${t('alertTitle1')} (${emptyMats.length})</h3>${emptyMats.map(m=>`<div class="alert alert-red">🔴 <strong>${m.name}</strong> — ${t('zeroQty')} ${m.unit}</div>`).join('')}</div>`;
+  if(lowMats.length) html+=`<div style="margin-bottom:18px"><h3 style="font-size:13px;color:var(--yellow);margin-bottom:10px">${t('alertTitle2')} (${lowMats.length})</h3>${lowMats.map(m=>`<div class="alert alert-warning">🟡 <strong>${m.name}</strong> — ${m.qty} ${m.unit} (${t('minNote')} ${m.min})</div>`).join('')}</div>`;
+  if(okMats.length) html+=`<div class="table-card"><div class="table-header"><div class="table-title">${t('alertTitle3')} (${okMats.length})</div></div><div style="padding:14px 18px;">${okMats.map(m=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">${m.name}</span><span style="color:var(--green)">${m.qty} ${m.unit}</span></div>`).join('')}</div></div>`;
+  if(!html) html=`<div class="empty-state"><div class="icon">✅</div><h3>${t('allGood')}</h3></div>`;
+  document.getElementById('alertsContent').innerHTML=html;
+}
+
+// ===================== MODALS =====================
+function openModal(n){document.getElementById('modal-'+n).classList.add('open');}
+function closeModal(n){document.getElementById('modal-'+n).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+async function addMaterial(){
+  const name=document.getElementById('newMatName').value.trim();
+  const unit=document.getElementById('newMatUnit').value;
+  const qty=parseInt(document.getElementById('newMatQty').value)||0;
+  const min=parseInt(document.getElementById('newMatMin').value)||5;
+  if(!name){showToast(t('errName'),'error');return;}
+  materials.push({id:nextId++,name,unit,qty,min});
+  closeModal('addMaterial');
+  renderStats();renderInventory();
+  showToast('✅ Added / تمت الإضافة','success');
+  document.getElementById('newMatName').value='';
+  document.getElementById('newMatQty').value='0';
+  document.getElementById('newMatMin').value='5';
+  await syncMaterials();
+}
+
+function openEditModal(id){
+  const mat=materials.find(m=>m.id===id);
+  if(!mat)return;
+  document.getElementById('editMatId').value=id;
+  document.getElementById('editMatMin').value=mat.min;
+  openModal('editMaterial');
+}
+
+async function saveEditMaterial(){
+  const id=parseInt(document.getElementById('editMatId').value);
+  const min=parseInt(document.getElementById('editMatMin').value)||0;
+  const mat=materials.find(m=>m.id===id);
+  if(mat){mat.min=min;renderStats();renderInventory();}
+  closeModal('editMaterial');
+  showToast('✅ Updated / تم التحديث','success');
+  await syncMaterials();
+}
+
+// ===================== EXPORT =====================
+function exportCSV(){
+  const headers=lang==='ar'?['التاريخ','النوع','المادة','الكمية','الوحدة','الجهة','البلوك','الفيلا','ملاحظات']:['Date','Type','Material','Qty','Unit','Receiver','Block','Villa','Notes'];
+  const rows=[headers];
+  transactions.forEach(tx=>rows.push([tx.date,tx.type==='in'?(lang==='ar'?'وارد':'In'):(lang==='ar'?'صادر':'Out'),tx.matName,tx.qty,tx.unit,tx.receiver||'',tx.block||'',tx.villa||'',tx.notes||'']));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`warehouse_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✅ Exported / تم التصدير','success');
+}
+
+// ===================== TOAST =====================
+function showToast(msg,type='success'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+// ===================== INIT =====================
+document.getElementById('headerDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+loadFromSheets();
+</script>
+</body>
+</html>
